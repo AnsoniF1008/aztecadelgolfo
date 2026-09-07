@@ -8,7 +8,7 @@ import { initializeApp } from 'firebase-admin/app'
 import { getAuth } from 'firebase-admin/auth'
 import { getFirestore, Timestamp } from 'firebase-admin/firestore'
 
-initializeApp({ projectId: process.env.GCLOUD_PROJECT || 'azteca-del-golfo' })
+initializeApp({ projectId: process.env.GCLOUD_PROJECT || 'aztecadelgolfofishingclu-bc814' })
 const auth = getAuth(), db = getFirestore()
 
 async function user(email, password, name, role, status, extra = {}) {

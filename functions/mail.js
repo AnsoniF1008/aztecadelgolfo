@@ -17,7 +17,7 @@ export const RESEND_API_KEY = defineSecret('RESEND_API_KEY')
 // both the emulators and deploys; defineString would block startup asking for them.
 export const MAIL_FROM = process.env.MAIL_FROM || 'Azteca del Golfo <noreply@aztecadelgolfo.com>'
 export const BOARD_EMAIL = process.env.BOARD_EMAIL || 'board@aztecadelgolfo.com'
-export const SITE_URL = process.env.SITE_URL || 'https://azteca-del-golfo.web.app'
+export const SITE_URL = process.env.SITE_URL || 'https://aztecadelgolfofishingclu-bc814.web.app'
 
 /** Wraps the body in the club's colours so every email looks the same. */
 export function layout(heading, bodyHtml) {
@@ -45,7 +45,7 @@ export async function sendMail({ to, subject, html, replyTo }) {
   let key = null
   try { key = RESEND_API_KEY.value() } catch { key = null }
   if (!to) { logger.warn(`Email skipped, no recipient: ${subject}`); return }
-  if (!key) { logger.warn(`Email skipped, RESEND_API_KEY not set — would have sent "${subject}" to ${to}`); return }
+  if (!key) { logger.warn(`Email skipped, RESEND_API_KEY not set â€” would have sent "${subject}" to ${to}`); return }
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',

@@ -81,7 +81,7 @@ Requirements: Node 20, Java 11+ (for the emulators), `npm i -g firebase-tools`.
 ```bash
 npm install
 cd functions && npm install && cd ..
-cp .env.example .env                        # demo values work with the emulators
+cp .env.example .env                        # project credentials, shared by every mode
 cp functions/.env.example functions/.env    # email addresses for the triggers
 npm run emulators               # Auth 9099, Firestore 8080, Storage 9199, Functions 5001, UI at http://127.0.0.1:4000
 npm run seed                    # in another terminal: admin + sample data
@@ -95,12 +95,32 @@ Install the `functions` dependencies **before** starting the emulators. If `func
 
 `npm run emulators` exports data to `./emulator-data` on exit and re-imports it on start, so you don't lose what you upload between sessions. The `--import` flag needs that directory to exist; on a clean checkout run `npm run emulators:fresh` once.
 
-## Going to production (when the time comes)
-1. Create the project in Firebase, enable Auth (email/password), Firestore, Storage and Blaze (Functions).
-2. `firebase use --add` and put the real credentials in `.env` with `VITE_USE_EMULATORS=false`.
-3. `firebase deploy --only firestore:rules,firestore:indexes,storage,functions`
-4. Register on the site, go to `/profile` and claim the first admin.
-5. `npm run deploy` (build + Hosting).
+`.env` holds the credentials and nothing else. Whether the app talks to the emulators is decided by `.env.development` (`true`) and `.env.production` (`false`), both committed — so `npm run dev` can't reach the real database by accident and `npm run build` always targets it.
+
+## Production
+
+Project `aztecadelgolfofishingclu-bc814`, live at **https://aztecadelgolfofishingclu-bc814.web.app**.
+Firestore is in `us-central1` (single region, permanent — changing it would mean a new project).
+
+Deployed and working: Firestore rules, the composite indexes, and Hosting.
+
+Still to do, all of it gated on the **Blaze** plan:
+
+| Blocked | Why it matters |
+|---|---|
+| `firebase deploy --only functions` | No admin roles (`syncAdminClaim`), no emails, no `registrationsCount`, no Storage cleanup on delete |
+| `firebase deploy --only storage` | New projects need Blaze before the default bucket exists, so photo and video uploads fail |
+
+And one thing that needs no billing, just a click in the console: **enable Email/Password** under Authentication > Sign-in method. Until then nobody can register or sign in.
+
+Order once Blaze is on:
+
+```bash
+firebase deploy --only storage,functions
+npm run deploy                    # build + Hosting
+```
+
+Then register on the site, go to `/profile` and claim the first admin (the link only works while no admin exists).
 
 ## What the rules enforce
 - Members create content as `pending` only, and cannot touch `status` or `featured`. Self-updates on a profile are limited to `name`, `boat`, `bio` and `photo`, so nobody can activate themselves, hand themselves `admin`, or rewrite `createdAt`.
