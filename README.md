@@ -20,14 +20,18 @@ src/
   pages/               ← public and member pages
   pages/admin/         ← the panel
 functions/index.js     ← Cloud Functions (Node 20)
+functions/mail.js      ← email helper (Resend) + shared email layout
 scripts/seed.js        ← initial admin + sample data (emulators)
+scripts/icons.js       ← builds public/ icons and og-image.png from assets/
+assets/logo-1024.png   ← logo master; never shipped, it is 1.28 MB on its own
 firestore.rules · storage.rules · firestore.indexes.json · firebase.json
 ```
 
 ## Data model (Firestore)
 | Collection | Key fields |
 |---|---|
-| `users/{uid}` | name, email, phone, boat, bio, photo, role, status, createdAt |
+| `users/{uid}` | name, boat, bio, photo, role, status, createdAt — **public** |
+| `users/{uid}/private/contact` | email, phone — readable only by that member and the board |
 | `media/{id}` | uid, name, type (photo/video/youtube), url, path, thumbUrl, thumbPath, videoUrl, title, description, species, location, caughtOn, status, featured, views, createdAt |
 | `catches/{id}` | uid, name, species, weightLb, lengthIn, location, bait, date (YYYY-MM-DD), year, photoUrl, photoPath, notes, eventId, status, createdAt |
 | `events/{id}` | title, slug, type, description, startsAt, endsAt, location, fee, capacity, imageUrl, published, registrationsCount |
@@ -43,8 +47,33 @@ Storage: `media/{uid}/…`, `catches/{uid}/…`, `profiles/{uid}/…`, `events/�
 - `syncAdminClaim` — when `users/{uid}.role` changes, sets the `admin` claim in Auth and stamps `claimsUpdatedAt` so the client refreshes its token.
 - `countRegistrations` — keeps `events.registrationsCount` in sync.
 - `cleanupMediaFiles` / `cleanupCatchPhoto` — delete Storage files when the document is deleted.
-- `notifyNewApplication` — hook for alerting the board about new applications (log only; wire up SendGrid/Resend or the *Trigger Email* extension).
+- `notifyNewApplication` — emails the board when someone applies, with reply-to set to the applicant.
+- `notifyMembershipApproved` — emails the member when the board flips them to `active`.
+- `notifyContactMessage` — emails the board when the contact form is used, with reply-to set to the sender.
 - `claimFirstAdmin` (callable) — makes the caller an admin **only if none exists yet**. Link shown on `/profile`.
+
+### Email
+Sent through [Resend](https://resend.com) from `functions/mail.js`. Two pieces of setup:
+
+```bash
+cp functions/.env.example functions/.env    # MAIL_FROM, BOARD_EMAIL, SITE_URL
+firebase functions:secrets:set RESEND_API_KEY
+```
+
+Without the key nothing is sent: each function logs `Email skipped… would have sent "<subject>" to <address>` and carries on, so the emulators and a fresh checkout work with no setup. `functions/.env` must exist even locally — the settings are read from `process.env`, and the sender domain has to be verified in Resend before real mail will go out.
+
+## Icons and link previews
+`assets/logo-1024.png` is the master. Everything in `public/` is generated from it:
+
+```bash
+npm run icons
+```
+
+That writes the three sizes the pages actually load (`logo-104.webp` for the header, `logo-192.webp` for the footer, `logo-768.webp` for the hero), the favicons, the iOS icon, the two PNGs the web manifest needs, and `og-image.png` (1200×630, emblem on club black) for WhatsApp/Facebook/iMessage/X previews. Loading the home page pulls about 130 KB of logo instead of the 1.28 MB master.
+
+The site URL is hard-coded in four places, because crawlers and `public/` files can't read env vars. When a custom domain is attached, update: `index.html` (canonical + `og:url` + `og:image`), `public/robots.txt`, `public/sitemap.xml` and `SITE_URL` in `functions/.env`.
+
+Crawlers don't run JavaScript, so the Open Graph tags describe the club as a whole. Per-page previews (a specific catch or event) would need prerendering.
 
 ## Running locally
 Requirements: Node 20, Java 11+ (for the emulators), `npm i -g firebase-tools`.
@@ -52,11 +81,14 @@ Requirements: Node 20, Java 11+ (for the emulators), `npm i -g firebase-tools`.
 ```bash
 npm install
 cd functions && npm install && cd ..
-cp .env.example .env            # demo values work with the emulators
+cp .env.example .env                        # demo values work with the emulators
+cp functions/.env.example functions/.env    # email addresses for the triggers
 npm run emulators               # Auth 9099, Firestore 8080, Storage 9199, Functions 5001, UI at http://127.0.0.1:4000
 npm run seed                    # in another terminal: admin + sample data
 npm run dev                     # http://localhost:5173
 ```
+
+On a slow machine the Functions emulator can give up before it finishes reading the code (`Cannot determine backend specification. Timeout after 10000`). Raise the window: `FUNCTIONS_DISCOVERY_TIMEOUT=120 npm run emulators`.
 Seed accounts: `admin@aztecadelgolfo.com / Azteca2026!`, `carlos@test.com / test1234` (active), `luis@test.com / test1234` (pending).
 
 Install the `functions` dependencies **before** starting the emulators. If `functions/node_modules` is missing when they boot, the Functions emulator silently loads nothing and the triggers never fire.
@@ -70,7 +102,15 @@ Install the `functions` dependencies **before** starting the emulators. If `func
 4. Register on the site, go to `/profile` and claim the first admin.
 5. `npm run deploy` (build + Hosting).
 
+## What the rules enforce
+- Members create content as `pending` only, and cannot touch `status` or `featured`. Self-updates on a profile are limited to `name`, `boat`, `bio` and `photo`, so nobody can activate themselves, hand themselves `admin`, or rewrite `createdAt`.
+- Only `active` profiles are publicly readable, so applicants aren't exposed while the board reviews them. Email and phone sit in `users/{uid}/private/contact`; the admin panel reads them with one collection group query.
+- Sign-ups check that the event is published, still in the future, and has room (`registrationsCount < capacity`, where a null capacity means unlimited). The count is maintained by `countRegistrations`, so a burst of simultaneous sign-ups can still slip one past a full event — for a club calendar that's an acceptable trade.
+- The sign-up list is members-only; visitors see just the number, read off the event document.
+- A view counts one at a time (`views == views + 1` and nothing else in the same write), and owners can't bump their own posts through the ownership clause.
+- Contact messages must carry exactly the five expected fields, arrive unread, use a server timestamp, and pass length and email-shape checks. That stops malformed and oversized junk but not a determined script: real rate limiting needs [App Check](https://firebase.google.com/docs/app-check), which is the next thing to turn on if the form gets abused.
+- Public queries always filter on `status == 'approved'` / `published == true` so they satisfy the rules.
+
 ## Notes
-- Rules: members can only create content as `pending` and cannot touch `status`/`featured`; only admins write events/news; public queries always filter on `status == 'approved'` / `published == true` so they satisfy the rules.
 - Photos are processed on the client (canvas), so no `sharp` in Functions.
 - For long videos, an unlisted YouTube upload plus a link is still the cheapest option, and the gallery already supports it.

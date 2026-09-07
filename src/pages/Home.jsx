@@ -28,7 +28,7 @@ export default function Home() {
         <p>Azteca del Golfo Fishing Club brings together everyone who heads out on the water every weekend: tournaments, group trips, a catch leaderboard and a gallery where every trip is on the record.</p>
         <div className="actions"><Link className="btn" to="/gallery">See the gallery</Link><Link className="btn outline" to="/join">Apply for membership</Link></div>
       </div>
-      <img className="emblem" src="/logo.png" alt="Club emblem: Aztec sun on a black field" />
+      <img className="emblem" src="/logo-768.webp" alt="Club emblem: Aztec sun on a black field" />
     </div></section>
 
     <section className="sec"><div className="wrap">

@@ -11,7 +11,7 @@ export default function Layout() {
   const close = () => setOpen(false)
   return <>
     <header className="top">
-      <Link className="brand" to="/" onClick={close}><img src="/logo.png" alt="" width="52" height="52" /><span>Azteca del Golfo<small>Fishing Club</small></span></Link>
+      <Link className="brand" to="/" onClick={close}><img src="/logo-104.webp" alt="" width="52" height="52" /><span>Azteca del Golfo<small>Fishing Club</small></span></Link>
       <button className="menu-btn" aria-label="Menu" aria-expanded={open} onClick={() => setOpen(o => !o)}>☰</button>
       <nav className={`nav ${open ? 'open' : ''}`} onClick={close}>
         <NavLink className={cls} to="/gallery">Gallery</NavLink>
@@ -34,7 +34,7 @@ export default function Layout() {
     <main><Outlet /></main>
     <footer className="footer">
       <div className="footer-in">
-        <div><img src="/logo.png" alt="" width="96" height="96" /><p>Gulf anglers united by a love of the sea. Houston, TX.</p></div>
+        <div><img src="/logo-192.webp" alt="" width="96" height="96" loading="lazy" decoding="async" /><p>Gulf anglers united by a love of the sea. Houston, TX.</p></div>
         <div><p><Link to="/gallery">Gallery</Link></p><p><Link to="/catches">Catch leaderboard</Link></p><p><Link to="/events">Tournaments & trips</Link></p><p><Link to="/about">Club rules</Link></p></div>
         <div><p><a href="mailto:info@aztecadelgolfo.com">info@aztecadelgolfo.com</a></p><p><Link to="/contact">Contact us</Link></p><p><Link to="/join">Apply for membership</Link></p></div>
       </div>

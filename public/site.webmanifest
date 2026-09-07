@@ -1,0 +1,13 @@
+{
+  "name": "Azteca del Golfo Fishing Club",
+  "short_name": "Azteca del Golfo",
+  "description": "Gulf Coast fishing club based in Houston, TX.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    { "src": "/logo-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

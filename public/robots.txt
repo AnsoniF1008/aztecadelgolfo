@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /profile
+Disallow: /upload
+Disallow: /catches/new
+
+Sitemap: https://azteca-del-golfo.web.app/sitemap.xml
