@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.token.admin == true; }
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function isActive() { return signedIn() && me().status == 'active'; }
+    function owns(res) { return signedIn() && res.data.uid == request.auth.uid; }
+    function unchanged(fields) {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
+    }
+
+    // ---- Member profiles ----
+    match /users/{uid} {
+      allow read: if true;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.role == 'member'
+        && request.resource.data.status == 'pending';
+      allow update: if isAdmin()
+        || (signedIn() && request.auth.uid == uid && unchanged(['role','status','email']));
+      allow delete: if isAdmin();
+    }
+
+    // ---- Gallery ----
+    match /media/{id} {
+      allow read: if resource.data.status == 'approved' || owns(resource) || isAdmin();
+      allow create: if isAdmin()
+        || (isActive() && request.resource.data.uid == request.auth.uid
+            && request.resource.data.status == 'pending'
+            && request.resource.data.featured == false);
+      allow update: if isAdmin()
+        || (owns(resource) && unchanged(['uid','status','featured','createdAt']))
+        || (resource.data.status == 'approved' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']));
+      allow delete: if isAdmin() || owns(resource);
+    }
+
+    // ---- Catches / leaderboard ----
+    match /catches/{id} {
+      allow read: if resource.data.status == 'approved' || owns(resource) || isAdmin();
+      allow create: if isAdmin()
+        || (isActive() && request.resource.data.uid == request.auth.uid && request.resource.data.status == 'pending');
+      allow update: if isAdmin() || (owns(resource) && unchanged(['uid','status','createdAt']));
+      allow delete: if isAdmin() || owns(resource);
+    }
+
+    // ---- Events ----
+    match /events/{id} {
+      allow read: if resource.data.published == true || isAdmin();
+      allow write: if isAdmin();
+
+      match /registrations/{uid} {
+        allow read: if true;
+        allow create: if isActive() && request.auth.uid == uid && request.resource.data.uid == uid;
+        allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      }
+    }
+
+    // Collection group query: "my registrations" on the profile page
+    match /{path=**}/registrations/{uid} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+    }
+
+    // ---- News ----
+    match /news/{id} {
+      allow read: if resource.data.published == true || isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ---- Contact ----
+    match /messages/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['name','email','message','createdAt','read'])
+        && request.resource.data.message.size() >= 10 && request.resource.data.message.size() <= 5000;
+      allow read, update, delete: if isAdmin();
+    }
+  }
+}

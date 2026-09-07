@@ -1,0 +1,24 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.token.admin == true; }
+    function isImage() { return request.resource.contentType.matches('image/(jpeg|png|webp)') && request.resource.size < 15 * 1024 * 1024; }
+    function isVideo() { return request.resource.contentType.matches('video/(mp4|quicktime|webm)') && request.resource.size < 250 * 1024 * 1024; }
+
+    match /media/{uid}/{file} {
+      allow read: if true;
+      allow write: if (signedIn() && request.auth.uid == uid && (isImage() || isVideo())) || isAdmin();
+    }
+    match /catches/{uid}/{file} {
+      allow read: if true;
+      allow write: if (signedIn() && request.auth.uid == uid && isImage()) || isAdmin();
+    }
+    match /profiles/{uid}/{file} {
+      allow read: if true;
+      allow write: if (signedIn() && request.auth.uid == uid && isImage()) || isAdmin();
+    }
+    match /events/{file} { allow read: if true; allow write: if isAdmin() && isImage(); }
+    match /news/{file} { allow read: if true; allow write: if isAdmin() && isImage(); }
+  }
+}
