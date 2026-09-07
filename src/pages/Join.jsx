@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, Navigate } from 'react-router-dom'
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth'
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, writeBatch, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
@@ -20,7 +20,10 @@ export default function Join() {
     try {
       const cred = await createUserWithEmailAndPassword(auth, f.email.trim().toLowerCase(), f.password)
       await updateProfile(cred.user, { displayName: f.name.trim() })
-      await setDoc(doc(db, 'users', cred.user.uid), { name: f.name.trim(), email: f.email.trim().toLowerCase(), phone: f.phone.trim() || null, boat: f.boat.trim() || null, bio: f.bio.trim() || null, photo: null, role: 'member', status: 'pending', createdAt: serverTimestamp() })
+      const batch = writeBatch(db)
+      batch.set(doc(db, 'users', cred.user.uid), { name: f.name.trim(), boat: f.boat.trim() || null, bio: f.bio.trim() || null, photo: null, role: 'member', status: 'pending', createdAt: serverTimestamp() })
+      batch.set(doc(db, 'users', cred.user.uid, 'private', 'contact'), { email: f.email.trim().toLowerCase(), phone: f.phone.trim() || null })
+      await batch.commit()
       toast('ok', "Application sent. The board will review it and we'll let you know when it's active.")
       nav('/profile')
     } catch (ex) {

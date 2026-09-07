@@ -14,7 +14,8 @@ const auth = getAuth(), db = getFirestore()
 async function user(email, password, name, role, status, extra = {}) {
   let u; try { u = await auth.getUserByEmail(email) } catch { u = await auth.createUser({ email, password, displayName: name }) }
   await auth.setCustomUserClaims(u.uid, { admin: role === 'admin' })
-  await db.doc(`users/${u.uid}`).set({ name, email, role, status, photo: null, boat: null, bio: null, phone: null, createdAt: Timestamp.now(), ...extra }, { merge: true })
+  await db.doc(`users/${u.uid}`).set({ name, role, status, photo: null, boat: null, bio: null, createdAt: Timestamp.now(), ...extra }, { merge: true })
+  await db.doc(`users/${u.uid}/private/contact`).set({ email, phone: null }, { merge: true })
   console.log(`${role.padEnd(6)} ${email} / ${password}`)
   return u.uid
 }

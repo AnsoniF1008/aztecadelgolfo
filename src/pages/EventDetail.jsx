@@ -9,20 +9,24 @@ import { fmtDate, fmtTime, toDate, lb, inch } from '../lib/utils'
 
 export default function EventDetail() {
   const { slug } = useParams(); const { user, profile, isAdmin, isActive } = useAuth(); const toast = useToast()
-  const [ev, setEv] = useState(undefined); const [signups, setSignups] = useState([]); const [results, setResults] = useState([])
+  const [ev, setEv] = useState(undefined); const [signups, setSignups] = useState(null); const [results, setResults] = useState([])
   useEffect(() => {
     getDocs(query(collection(db, 'events'), where('slug', '==', slug), where('published', '==', true), limit(1))).then(s => setEv(s.empty ? null : { id: s.docs[0].id, ...s.docs[0].data() })).catch(() => setEv(null))
   }, [slug])
   useEffect(() => {
     if (!ev) return
-    const unsub = onSnapshot(collection(db, 'events', ev.id, 'registrations'), s => setSignups(s.docs.map(d => ({ id: d.id, ...d.data() }))))
     if (ev.type === 'tournament') getDocs(query(collection(db, 'catches'), where('eventId', '==', ev.id), where('status', '==', 'approved'), orderBy('weightLb', 'desc'), limit(20))).then(s => setResults(s.docs.map(d => ({ id: d.id, ...d.data() })))).catch(() => {})
-    return unsub
   }, [ev?.id])
+  // The sign-up list is members only; visitors get the count from the event itself.
+  useEffect(() => {
+    if (!ev || !(isActive || isAdmin)) return
+    return onSnapshot(collection(db, 'events', ev.id, 'registrations'), s => setSignups(s.docs.map(d => ({ id: d.id, ...d.data() }))), () => setSignups(null))
+  }, [ev?.id, isActive, isAdmin])
 
   if (ev === undefined) return <Loading />
   if (ev === null) return <section className="sec"><div className="wrap"><h1>Event not found.</h1><Link to="/events">See all events</Link></div></section>
-  const past = toDate(ev.startsAt) < new Date(); const signedUp = user && signups.some(i => i.id === user.uid); const full = ev.capacity && signups.length >= ev.capacity
+  const past = toDate(ev.startsAt) < new Date(); const count = signups ? signups.length : (ev.registrationsCount || 0)
+  const signedUp = !!user && !!signups && signups.some(i => i.id === user.uid); const full = ev.capacity && count >= ev.capacity
   const signUp = async () => { await setDoc(doc(db, 'events', ev.id, 'registrations', user.uid), { uid: user.uid, name: profile.name, createdAt: serverTimestamp() }); toast('ok', "You're in. See you on the water.") }
   const cancel = async () => { await deleteDoc(doc(db, 'events', ev.id, 'registrations', user.uid)); toast('ok', 'Sign-up cancelled.') }
 
@@ -42,7 +46,7 @@ export default function EventDetail() {
           <dt>When</dt><dd>{fmtDate(ev.startsAt, true)}, {fmtTime(ev.startsAt)}{ev.endsAt && <><br />until {fmtDate(ev.endsAt)} {fmtTime(ev.endsAt)}</>}</dd>
           {ev.location && <><dt>Where</dt><dd>{ev.location}</dd></>}
           {ev.fee != null && <><dt>Entry fee</dt><dd>${Number(ev.fee).toFixed(2)}</dd></>}
-          <dt>Signed up</dt><dd>{signups.length}{ev.capacity ? ` / ${ev.capacity}` : ''}</dd>
+          <dt>Signed up</dt><dd>{count}{ev.capacity ? ` / ${ev.capacity}` : ''}</dd>
         </dl>
         <div style={{ marginTop: 18 }}>
           {past ? <p className="badge">Event finished</p>
@@ -52,7 +56,7 @@ export default function EventDetail() {
             : full ? <p className="badge rejected">Event is full</p>
             : <button className="btn" onClick={signUp}>Sign me up</button>}
         </div>
-        {signups.length > 0 && <><h3 style={{ marginTop: 24 }}>Who's coming</h3><ul style={{ paddingLeft: '1.2em', margin: 0 }}>{signups.map(i => <li key={i.id}><Link to={`/members/${i.id}`}>{i.name}</Link></li>)}</ul></>}
+        {signups?.length > 0 && <><h3 style={{ marginTop: 24 }}>Who's coming</h3><ul style={{ paddingLeft: '1.2em', margin: 0 }}>{signups.map(i => <li key={i.id}><Link to={`/members/${i.id}`}>{i.name}</Link></li>)}</ul></>}
         {isAdmin && <p style={{ marginTop: 18 }}><Link to={`/admin/events/${ev.id}`}>Edit event</Link></p>}
       </aside>
     </div>

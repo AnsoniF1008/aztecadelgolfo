@@ -10,16 +10,46 @@ service cloud.firestore {
     function unchanged(fields) {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
     }
+    function touchedOnly(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+    function eventData(id) {
+      return get(/databases/$(database)/documents/events/$(id)).data;
+    }
+    // capacity == null means unlimited. registrationsCount is kept by countRegistrations.
+    function hasRoom(ev) {
+      return ev.get('capacity', null) == null
+        || ev.get('registrationsCount', 0) < ev.get('capacity', 0);
+    }
 
     // ---- Member profiles ----
+    // Public fields only: email and phone live in users/{uid}/private/contact.
+    // Pending and suspended profiles are not public.
     match /users/{uid} {
-      allow read: if true;
+      allow read: if resource.data.status == 'active'
+        || isAdmin()
+        || (signedIn() && request.auth.uid == uid);
       allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name','boat','bio','photo','role','status','createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 3
+        && request.resource.data.name.size() <= 80
         && request.resource.data.role == 'member'
-        && request.resource.data.status == 'pending';
+        && request.resource.data.status == 'pending'
+        && request.resource.data.createdAt == request.time;
       allow update: if isAdmin()
-        || (signedIn() && request.auth.uid == uid && unchanged(['role','status','email']));
+        || (signedIn() && request.auth.uid == uid && touchedOnly(['name','boat','bio','photo']));
       allow delete: if isAdmin();
+
+      // Contact details: the member and the board, nobody else.
+      match /private/{docId} {
+        allow read, write: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      }
+    }
+
+    // Board-only: one collection group query feeds the contact column in /admin/members.
+    match /{path=**}/private/{docId} {
+      allow read: if isAdmin();
     }
 
     // ---- Gallery ----
@@ -30,8 +60,11 @@ service cloud.firestore {
             && request.resource.data.status == 'pending'
             && request.resource.data.featured == false);
       allow update: if isAdmin()
-        || (owns(resource) && unchanged(['uid','status','featured','createdAt']))
-        || (resource.data.status == 'approved' && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views']));
+        || (owns(resource) && unchanged(['uid','status','featured','createdAt','views']))
+        // Anyone may count a view, one at a time.
+        || (resource.data.status == 'approved'
+            && touchedOnly(['views'])
+            && request.resource.data.views == resource.data.get('views', 0) + 1);
       allow delete: if isAdmin() || owns(resource);
     }
 
@@ -50,8 +83,16 @@ service cloud.firestore {
       allow write: if isAdmin();
 
       match /registrations/{uid} {
-        allow read: if true;
-        allow create: if isActive() && request.auth.uid == uid && request.resource.data.uid == uid;
+        // Who's coming is for members; visitors see the count on the event doc.
+        allow read: if isAdmin() || isActive();
+        allow create: if isAdmin()
+          || (isActive() && request.auth.uid == uid
+              && request.resource.data.keys().hasOnly(['uid','name','createdAt'])
+              && request.resource.data.uid == uid
+              && request.resource.data.createdAt == request.time
+              && eventData(id).published == true
+              && eventData(id).startsAt > request.time
+              && hasRoom(eventData(id)));
         allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
       }
     }
@@ -70,6 +111,15 @@ service cloud.firestore {
     // ---- Contact ----
     match /messages/{id} {
       allow create: if request.resource.data.keys().hasOnly(['name','email','message','createdAt','read'])
+        && request.resource.data.keys().hasAll(['name','email','message','createdAt','read'])
+        && request.resource.data.read == false
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 100
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 200
+        && request.resource.data.email.matches('^[^@]+@[^@]+[.][^@]+$')
+        && request.resource.data.message is string
         && request.resource.data.message.size() >= 10 && request.resource.data.message.size() <= 5000;
       allow read, update, delete: if isAdmin();
     }

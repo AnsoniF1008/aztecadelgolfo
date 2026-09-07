@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider, signOut } from 'firebase/auth'
-import { doc, updateDoc, deleteDoc, collection, getDocs, query, where, orderBy, collectionGroup, getDoc } from 'firebase/firestore'
+import { doc, updateDoc, setDoc, deleteDoc, collection, getDocs, query, where, orderBy, collectionGroup, getDoc } from 'firebase/firestore'
 import { httpsCallable } from 'firebase/functions'
 import { auth, db, functions } from '../lib/firebase'
 import { useAuth } from '../context/AuthContext'
@@ -13,6 +13,7 @@ export default function Profile() {
   const { user, profile, isAdmin } = useAuth(); const toast = useToast()
   const [media, setMedia] = useState([]); const [catches, setCatches] = useState([]); const [events, setEvents] = useState([])
   const [f, setF] = useState({ name: '', phone: '', boat: '', bio: '' }); const [photo, setPhoto] = useState(null)
+  const [contact, setContact] = useState(null)
   const [pw, setPw] = useState({ current: '', next: '', next2: '' }); const [err, setErr] = useState(null)
   const load = async () => {
     const [m, c, r] = await Promise.all([
@@ -25,16 +26,20 @@ export default function Profile() {
     setEvents(evDocs.filter(d => d.exists()).map(d => ({ id: d.id, ...d.data() })).filter(e => e.startsAt?.toDate() >= new Date()).sort((a, b) => a.startsAt.seconds - b.startsAt.seconds))
   }
   useEffect(() => { load().catch(console.error) }, [user.uid])
-  useEffect(() => { if (profile) setF({ name: profile.name || '', phone: profile.phone || '', boat: profile.boat || '', bio: profile.bio || '' }) }, [profile])
+  useEffect(() => { getDoc(doc(db, 'users', user.uid, 'private', 'contact')).then(d => setContact(d.exists() ? d.data() : {})).catch(() => setContact({})) }, [user.uid])
+  useEffect(() => { if (profile) setF(v => ({ ...v, name: profile.name || '', boat: profile.boat || '', bio: profile.bio || '' })) }, [profile])
+  useEffect(() => { if (contact) setF(v => ({ ...v, phone: contact.phone || '' })) }, [contact])
   const set = e => setF(v => ({ ...v, [e.target.name]: e.target.value }))
 
   const save = async e => {
     e.preventDefault(); setErr(null)
     try {
       if (f.name.trim().length < 3) throw new Error('That name is too short.')
-      const data = { name: f.name.trim(), phone: f.phone.trim() || null, boat: f.boat.trim() || null, bio: f.bio.trim() || null }
+      const data = { name: f.name.trim(), boat: f.boat.trim() || null, bio: f.bio.trim() || null }
       if (photo) { const b = await resizeImage(photo, 400, true); data.photo = (await upload(`profiles/${user.uid}/${fileName('jpg')}`, b, 'image/jpeg')).url }
-      await updateDoc(doc(db, 'users', user.uid), data); toast('ok', 'Changes saved.')
+      await updateDoc(doc(db, 'users', user.uid), data)
+      await setDoc(doc(db, 'users', user.uid, 'private', 'contact'), { phone: f.phone.trim() || null }, { merge: true })
+      toast('ok', 'Changes saved.')
     } catch (ex) { setErr(ex.message) }
   }
   const changePw = async e => {
