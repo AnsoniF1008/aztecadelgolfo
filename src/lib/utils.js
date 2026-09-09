@@ -1,5 +1,4 @@
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage'
-import { storage } from './firebase'
+import { getStorageLazy } from './firebase'
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December']
@@ -43,7 +42,9 @@ export function resizeImage(file, max, square = false, quality = 0.86) {
 }
 
 /** Uploads a Blob/File to Storage with progress. Returns { url, path }. */
-export function upload(path, blob, contentType, onProgress) {
+export async function upload(path, blob, contentType, onProgress) {
+  const [{ ref, uploadBytesResumable, getDownloadURL }, storage] =
+    await Promise.all([import('firebase/storage'), getStorageLazy()])
   return new Promise((res, rej) => {
     const r = ref(storage, path)
     const task = uploadBytesResumable(r, blob, { contentType })

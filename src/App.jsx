@@ -1,33 +1,38 @@
+import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import Guard from './components/Guard'
 import Home from './pages/Home'
-import Gallery from './pages/Gallery'
-import GalleryItem from './pages/GalleryItem'
-import Upload from './pages/Upload'
-import Catches from './pages/Catches'
-import CatchNew from './pages/CatchNew'
-import Events from './pages/Events'
-import EventDetail from './pages/EventDetail'
-import News from './pages/News'
-import NewsPost from './pages/NewsPost'
-import Members from './pages/Members'
-import MemberProfile from './pages/MemberProfile'
-import About from './pages/About'
-import Contact from './pages/Contact'
-import Login from './pages/Login'
-import Join from './pages/Join'
-import Profile from './pages/Profile'
-import AdminLayout from './pages/admin/AdminLayout'
-import Dashboard from './pages/admin/Dashboard'
-import AdminMedia from './pages/admin/Media'
-import AdminCatches from './pages/admin/Catches'
-import AdminEvents from './pages/admin/Events'
-import AdminEventForm from './pages/admin/EventForm'
-import AdminNews from './pages/admin/News'
-import AdminNewsForm from './pages/admin/NewsForm'
-import AdminMembers from './pages/admin/Members'
-import AdminMessages from './pages/admin/Messages'
+
+// Home ships in the main bundle so the landing page paints without a second
+// round trip. Everything else loads on demand — a visitor browsing the gallery
+// never downloads the admin panel. Suspense lives around the Outlet in Layout.
+const Gallery = lazy(() => import('./pages/Gallery'))
+const GalleryItem = lazy(() => import('./pages/GalleryItem'))
+const Upload = lazy(() => import('./pages/Upload'))
+const Catches = lazy(() => import('./pages/Catches'))
+const CatchNew = lazy(() => import('./pages/CatchNew'))
+const Events = lazy(() => import('./pages/Events'))
+const EventDetail = lazy(() => import('./pages/EventDetail'))
+const News = lazy(() => import('./pages/News'))
+const NewsPost = lazy(() => import('./pages/NewsPost'))
+const Members = lazy(() => import('./pages/Members'))
+const MemberProfile = lazy(() => import('./pages/MemberProfile'))
+const About = lazy(() => import('./pages/About'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Login = lazy(() => import('./pages/Login'))
+const Join = lazy(() => import('./pages/Join'))
+const Profile = lazy(() => import('./pages/Profile'))
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
+const Dashboard = lazy(() => import('./pages/admin/Dashboard'))
+const AdminMedia = lazy(() => import('./pages/admin/Media'))
+const AdminCatches = lazy(() => import('./pages/admin/Catches'))
+const AdminEvents = lazy(() => import('./pages/admin/Events'))
+const AdminEventForm = lazy(() => import('./pages/admin/EventForm'))
+const AdminNews = lazy(() => import('./pages/admin/News'))
+const AdminNewsForm = lazy(() => import('./pages/admin/NewsForm'))
+const AdminMembers = lazy(() => import('./pages/admin/Members'))
+const AdminMessages = lazy(() => import('./pages/admin/Messages'))
 
 const NotFound = () => <section className="sec"><div className="wrap"><h1>We couldn't find that page.</h1><p>The link may have changed. <a href="/">Back to the home page</a>.</p></div></section>
 

@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { signOut } from 'firebase/auth'
 import { auth } from '../lib/firebase'
 import { useAuth } from '../context/AuthContext'
+import { Loading } from './MediaCard'
 
 export default function Layout() {
   const { user, profile, isAdmin } = useAuth()
@@ -31,7 +32,8 @@ export default function Layout() {
         </>}
       </nav>
     </header>
-    <main><Outlet /></main>
+    {/* Header and footer stay put while the route's chunk arrives. */}
+    <main><Suspense fallback={<Loading />}><Outlet /></Suspense></main>
     <footer className="footer">
       <div className="footer-in">
         <div><img src="/logo-192.webp" alt="" width="96" height="96" loading="lazy" decoding="async" /><p>Gulf anglers united by a love of the sea. Houston, TX.</p></div>

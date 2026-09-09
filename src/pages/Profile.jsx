@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { updatePassword, reauthenticateWithCredential, EmailAuthProvider, signOut } from 'firebase/auth'
 import { doc, updateDoc, setDoc, deleteDoc, collection, getDocs, query, where, orderBy, collectionGroup, getDoc } from 'firebase/firestore'
-import { httpsCallable } from 'firebase/functions'
-import { auth, db, functions } from '../lib/firebase'
+import { auth, db, getFunctionsLazy } from '../lib/firebase'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { Badge, Empty } from '../components/MediaCard'
@@ -51,7 +50,13 @@ export default function Profile() {
     } catch { setErr("Your current password isn't correct.") }
   }
   const remove = async (col, id) => { if (!confirm('Delete this?')) return; await deleteDoc(doc(db, col, id)); toast('ok', 'Deleted.'); load() }
-  const claimAdmin = async () => { try { await httpsCallable(functions, 'claimFirstAdmin')(); toast('ok', "You're an administrator now. Reloading…"); setTimeout(() => location.reload(), 1500) } catch (ex) { toast('error', ex.message) } }
+  const claimAdmin = async () => {
+    try {
+      const [{ httpsCallable }, fns] = await Promise.all([import('firebase/functions'), getFunctionsLazy()])
+      await httpsCallable(fns, 'claimFirstAdmin')()
+      toast('ok', "You're an administrator now. Reloading…"); setTimeout(() => location.reload(), 1500)
+    } catch (ex) { toast('error', ex.message) }
+  }
 
   if (!profile) return <section className="sec"><div className="wrap"><Empty>We couldn't find your member profile. <a href="#" onClick={() => signOut(auth)}>Sign out</a> and register again.</Empty></div></section>
   return <section className="sec"><div className="wrap">
