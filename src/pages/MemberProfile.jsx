@@ -22,8 +22,8 @@ export default function MemberProfile() {
   if (s === undefined) return <Loading />
   if (!s) return <section className="sec"><div className="wrap"><h1>Member not found.</h1><Link to="/members">See members</Link></div></section>
   return <section className="sec"><div className="wrap">
-    <div className="detail" style={{ gridTemplateColumns: '260px 1fr' }}>
-      <aside className="facts member"><Avatar s={s} /><h3>{s.name}</h3>{s.role === 'admin' && <span className="badge admin">Board</span>}
+    <div className="detail profile-layout">
+      <aside className="facts member"><Avatar s={s} /><h3>{s.name}</h3>{s.role === 'admin' && <span className="badge board">Board</span>}
         {s.boat && <p style={{ marginTop: 8 }}><small>Boat: {s.boat}</small></p>}<p><small>Member since {fmtDate(s.createdAt)}</small></p>
         {s.bio && <p style={{ textAlign: 'left', whiteSpace: 'pre-line' }}>{s.bio}</p>}</aside>
       <div>

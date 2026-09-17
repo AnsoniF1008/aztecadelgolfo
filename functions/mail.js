@@ -17,7 +17,7 @@ export const RESEND_API_KEY = defineSecret('RESEND_API_KEY')
 // both the emulators and deploys; defineString would block startup asking for them.
 export const MAIL_FROM = process.env.MAIL_FROM || 'Azteca del Golfo <noreply@aztecadelgolfo.com>'
 export const BOARD_EMAIL = process.env.BOARD_EMAIL || 'board@aztecadelgolfo.com'
-export const SITE_URL = process.env.SITE_URL || 'https://aztecadelgolfofishingclu-bc814.web.app'
+export const SITE_URL = process.env.SITE_URL || 'https://aztecadelgolfo.com'
 
 /** Wraps the body in the club's colours so every email looks the same. */
 export function layout(heading, bodyHtml) {

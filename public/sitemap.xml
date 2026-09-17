@@ -2,13 +2,13 @@
 <!-- Stable public routes only. Gallery, event and news detail pages are created from
      Firestore, so they are not listed here. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://aztecadelgolfofishingclu-bc814.web.app/</loc><priority>1.0</priority></url>
-  <url><loc>https://aztecadelgolfofishingclu-bc814.web.app/gallery</loc><priority>0.8</priority></url>
-  <url><loc>https://aztecadelgolfofishingclu-bc814.web.app/catches</loc><priority>0.8</priority></url>
-  <url><loc>https://aztecadelgolfofishingclu-bc814.web.app/events</loc><priority>0.8</priority></url>
-  <url><loc>https://aztecadelgolfofishingclu-bc814.web.app/news</loc><priority>0.7</priority></url>
-  <url><loc>https://aztecadelgolfofishingclu-bc814.web.app/members</loc><priority>0.6</priority></url>
-  <url><loc>https://aztecadelgolfofishingclu-bc814.web.app/about</loc><priority>0.6</priority></url>
-  <url><loc>https://aztecadelgolfofishingclu-bc814.web.app/contact</loc><priority>0.5</priority></url>
-  <url><loc>https://aztecadelgolfofishingclu-bc814.web.app/join</loc><priority>0.7</priority></url>
+  <url><loc>https://aztecadelgolfo.com/</loc><priority>1.0</priority></url>
+  <url><loc>https://aztecadelgolfo.com/gallery</loc><priority>0.8</priority></url>
+  <url><loc>https://aztecadelgolfo.com/catches</loc><priority>0.8</priority></url>
+  <url><loc>https://aztecadelgolfo.com/events</loc><priority>0.8</priority></url>
+  <url><loc>https://aztecadelgolfo.com/news</loc><priority>0.7</priority></url>
+  <url><loc>https://aztecadelgolfo.com/members</loc><priority>0.6</priority></url>
+  <url><loc>https://aztecadelgolfo.com/about</loc><priority>0.6</priority></url>
+  <url><loc>https://aztecadelgolfo.com/contact</loc><priority>0.5</priority></url>
+  <url><loc>https://aztecadelgolfo.com/join</loc><priority>0.7</priority></url>
 </urlset>

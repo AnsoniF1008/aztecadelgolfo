@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { youtubeId } from '../lib/utils'
+import { STATUS_LABEL } from '../lib/forms'
 export default function MediaCard({ m }) {
   return <Link className="mcard" to={`/gallery/${m.id}`}>
     {m.type === 'photo' && <img src={m.thumbUrl || m.url} alt={m.title} loading="lazy" />}
@@ -13,6 +14,6 @@ export function MediaEmbed({ m }) {
   if (m.type === 'youtube') return <div className="yt"><iframe src={`https://www.youtube-nocookie.com/embed/${youtubeId(m.videoUrl)}`} allowFullScreen title={m.title} /></div>
   return <video className="media-full" src={m.url} controls playsInline preload="metadata" />
 }
-export const Badge = ({ s }) => <span className={`badge ${s}`}>{s}</span>
+export const Badge = ({ s }) => <span className={`badge ${s}`}>{STATUS_LABEL[s] || s}</span>
 export const Empty = ({ children }) => <div className="empty">{children}</div>
 export const Loading = () => <div className="loading">Loading…</div>

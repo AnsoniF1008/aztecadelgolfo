@@ -21,6 +21,7 @@ const MemberProfile = lazy(() => import('./pages/MemberProfile'))
 const About = lazy(() => import('./pages/About'))
 const Contact = lazy(() => import('./pages/Contact'))
 const Login = lazy(() => import('./pages/Login'))
+const AuthAction = lazy(() => import('./pages/AuthAction'))
 const Join = lazy(() => import('./pages/Join'))
 const Profile = lazy(() => import('./pages/Profile'))
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
@@ -54,6 +55,7 @@ export default function App() {
       <Route path="/about" element={<About />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/auth/action" element={<AuthAction />} />
       <Route path="/join" element={<Join />} />
       <Route path="/profile" element={<Guard><Profile /></Guard>} />
       <Route path="/admin" element={<Guard requireAdmin><AdminLayout /></Guard>}>

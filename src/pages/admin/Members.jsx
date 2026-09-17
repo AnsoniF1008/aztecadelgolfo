@@ -23,7 +23,7 @@ export default function AdminMembers() {
     {!list.length && <Empty>Nothing in this list.</Empty>}
     <div className="table-wrap"><table className="table"><thead><tr><th>Member</th><th>Contact</th><th>Applied</th><th>Status</th><th></th></tr></thead>
       <tbody>{list.map(s => { const c = contacts[s.id] || {}; return <tr key={s.id}>
-        <td><b>{s.name}</b> {s.role === 'admin' && <span className="badge admin">admin</span>}{s.boat && <><br /><small>{s.boat}</small></>}{s.bio && <><br /><small style={{ color: 'var(--ink-2)' }}>{s.bio.slice(0, 120)}</small></>}</td>
+        <td><b>{s.name}</b> {s.role === 'admin' && <span className="badge board">admin</span>}{s.boat && <><br /><small>{s.boat}</small></>}{s.bio && <><br /><small style={{ color: 'var(--ink-2)' }}>{s.bio.slice(0, 120)}</small></>}</td>
         <td>{c.email ? <a href={`mailto:${c.email}`}>{c.email}</a> : <small>—</small>}{c.phone && <><br /><small>{c.phone}</small></>}</td>
         <td>{fmtDate(s.createdAt)}</td><td><Badge s={s.status} /></td>
         <td>{s.id === user.uid ? <small>You</small> : <div className="actions-row">

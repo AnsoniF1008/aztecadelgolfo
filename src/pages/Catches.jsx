@@ -29,7 +29,7 @@ export default function Catches() {
     </div>
     {podium.length > 0 && <div className="podium">{podium.map((c, i) => <article key={c.id}>
       <span className="n">{i + 1}</span>
-      {c.photoUrl ? <img src={c.photoUrl} alt="" /> : <div className="none">🎣</div>}
+      {c.photoUrl ? <img src={c.photoUrl} alt="" /> : <div className="none" aria-hidden="true" />}
       <div className="txt"><b>{lb(c.weightLb)} · {c.species}</b>{c.name}<br /><small>{c.location} · {fmtDate(c.date)}</small></div>
     </article>)}</div>}
     {filtered.length ? <div className="table-wrap"><table className="table"><thead><tr><th></th><th></th><th>Angler</th><th>Species</th><th>Weight</th><th>Length</th><th>Location</th><th>Bait</th><th>Date</th></tr></thead>

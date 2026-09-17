@@ -4,7 +4,9 @@ import { addDoc, collection, getDocs, query, where, orderBy, serverTimestamp, Ti
 import { db } from '../lib/firebase'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
-import { resizeImage, upload, fileName, SPECIES, todayISO, fmtDate } from '../lib/utils'
+import { fail } from '../lib/forms'
+import { resizeImage, upload, fileName, todayISO, fmtDate } from '../lib/utils'
+import SpeciesPicker from '../components/SpeciesPicker'
 
 export default function CatchNew() {
   const { user, profile, isAdmin } = useAuth(); const nav = useNavigate(); const toast = useToast()
@@ -21,25 +23,33 @@ export default function CatchNew() {
   const send = async e => {
     e.preventDefault(); setErr(null); setSending(true)
     try {
-      if (!f.species.trim()) throw new Error('Enter the species.')
-      if (!f.weightLb && !f.lengthIn) throw new Error('Enter either the weight or the length.')
-      if (!f.date || f.date > todayISO()) throw new Error("That date isn't valid.")
+      if (!f.species.trim()) throw new Error('Pick the species from the list.')
+      const weight = f.weightLb === '' ? null : Number(f.weightLb)
+      const length = f.lengthIn === '' ? null : Number(f.lengthIn)
+      if ((weight == null || Number.isNaN(weight) || weight <= 0) && (length == null || Number.isNaN(length) || length <= 0)) {
+        throw new Error('Enter a weight or a length greater than zero.')
+      }
+      if (!f.date || f.date > todayISO()) throw new Error('Pick a catch date that is not in the future.')
+      if (photo && !/^image\//.test(photo.type) && !/\.(jpe?g|png|webp)$/i.test(photo.name)) throw new Error('Use a JPG, PNG or WEBP photo.')
       let photoUrl = null, photoPath = null
       if (photo) { const b = await resizeImage(photo, 1600); ({ url: photoUrl, path: photoPath } = await upload(`catches/${user.uid}/${fileName('jpg')}`, b, 'image/jpeg')) }
       await addDoc(collection(db, 'catches'), {
-        uid: user.uid, name: profile.name, species: f.species.trim(), weightLb: f.weightLb ? Number(f.weightLb) : null, lengthIn: f.lengthIn ? Number(f.lengthIn) : null,
+        uid: user.uid, name: profile.name, species: f.species.trim(), weightLb: weight, lengthIn: length,
         location: f.location.trim() || null, bait: f.bait.trim() || null, date: f.date, year: Number(f.date.slice(0, 4)), photoUrl, photoPath,
         notes: f.notes.trim() || null, eventId: f.eventId || null, status: isAdmin ? 'approved' : 'pending', createdAt: serverTimestamp(),
       })
       toast('ok', isAdmin ? 'Catch added to the leaderboard.' : "Catch submitted. It'll show on the leaderboard once the board validates it.")
       nav('/profile')
-    } catch (ex) { setErr(ex.message); setSending(false) }
+    } catch (ex) { setErr(fail(ex, 'We could not save that catch.')); setSending(false) }
   }
   return <section className="sec"><div className="wrap">
     <div className="head"><div><h2>Log a catch</h2><p>Weight in pounds and length in inches. A photo with the scale or the tape helps us validate it faster.</p></div></div>
     <form className="form" onSubmit={send}>
-      {err && <p className="err">{err}</p>}
-      <div className="field"><label htmlFor="es">Species</label><input id="es" name="species" list="species-list" required value={f.species} onChange={set} /><datalist id="species-list">{SPECIES.map(s => <option key={s} value={s} />)}</datalist></div>
+      {err && <p className="err" role="alert">{err}</p>}
+      <div className="field"><label htmlFor="es">Species</label>
+        <SpeciesPicker id="es" value={f.species} onChange={v => setF(s => ({ ...s, species: v }))} />
+        <small>Houston, Galveston Bay, nearby freshwater, and Gulf species. Type a name in English or Spanish.</small>
+      </div>
       <div className="row"><div className="field"><label htmlFor="pe">Weight (lb)</label><input id="pe" type="number" step="0.1" min="0" name="weightLb" value={f.weightLb} onChange={set} /></div>
         <div className="field"><label htmlFor="la">Length (in)</label><input id="la" type="number" step="0.1" min="0" name="lengthIn" value={f.lengthIn} onChange={set} /></div></div>
       <div className="row"><div className="field"><label htmlFor="lg">Location</label><input id="lg" name="location" value={f.location} onChange={set} /></div>

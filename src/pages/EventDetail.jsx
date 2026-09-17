@@ -5,11 +5,12 @@ import { db } from '../lib/firebase'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import { Loading } from '../components/MediaCard'
+import { fail } from '../lib/forms'
 import { fmtDate, fmtTime, toDate, lb, inch } from '../lib/utils'
 
 export default function EventDetail() {
   const { slug } = useParams(); const { user, profile, isAdmin, isActive } = useAuth(); const toast = useToast()
-  const [ev, setEv] = useState(undefined); const [signups, setSignups] = useState(null); const [results, setResults] = useState([])
+  const [ev, setEv] = useState(undefined); const [signups, setSignups] = useState(null); const [results, setResults] = useState([]); const [busy, setBusy] = useState(false)
   useEffect(() => {
     getDocs(query(collection(db, 'events'), where('slug', '==', slug), where('published', '==', true), limit(1))).then(s => setEv(s.empty ? null : { id: s.docs[0].id, ...s.docs[0].data() })).catch(() => setEv(null))
   }, [slug])
@@ -27,8 +28,22 @@ export default function EventDetail() {
   if (ev === null) return <section className="sec"><div className="wrap"><h1>Event not found.</h1><Link to="/events">See all events</Link></div></section>
   const past = toDate(ev.startsAt) < new Date(); const count = signups ? signups.length : (ev.registrationsCount || 0)
   const signedUp = !!user && !!signups && signups.some(i => i.id === user.uid); const full = ev.capacity && count >= ev.capacity
-  const signUp = async () => { await setDoc(doc(db, 'events', ev.id, 'registrations', user.uid), { uid: user.uid, name: profile.name, createdAt: serverTimestamp() }); toast('ok', "You're in. See you on the water.") }
-  const cancel = async () => { await deleteDoc(doc(db, 'events', ev.id, 'registrations', user.uid)); toast('ok', 'Sign-up cancelled.') }
+  const signUp = async () => {
+    setBusy(true)
+    try {
+      await setDoc(doc(db, 'events', ev.id, 'registrations', user.uid), { uid: user.uid, name: profile.name, createdAt: serverTimestamp() })
+      toast('ok', "You're in. See you on the water.")
+    } catch (ex) { toast('error', fail(ex, 'We could not sign you up. Try again.')) }
+    setBusy(false)
+  }
+  const cancel = async () => {
+    setBusy(true)
+    try {
+      await deleteDoc(doc(db, 'events', ev.id, 'registrations', user.uid))
+      toast('ok', 'Sign-up cancelled.')
+    } catch (ex) { toast('error', fail(ex, 'We could not cancel that sign-up.')) }
+    setBusy(false)
+  }
 
   return <section className="sec"><div className="wrap">
     <p><Link to="/events">← All events</Link></p>
@@ -52,9 +67,9 @@ export default function EventDetail() {
           {past ? <p className="badge">Event finished</p>
             : !user ? <Link className="btn" to="/login">Sign in to register</Link>
             : !isActive ? <p className="badge pending">Your membership is still pending</p>
-            : signedUp ? <><p><span className="badge approved">You're signed up</span></p><button className="btn sm gray" onClick={cancel}>Cancel sign-up</button></>
+            : signedUp ? <><p><span className="badge approved">You're signed up</span></p><button className="btn sm gray" disabled={busy} onClick={cancel}>{busy ? 'Working…' : 'Cancel sign-up'}</button></>
             : full ? <p className="badge rejected">Event is full</p>
-            : <button className="btn" onClick={signUp}>Sign me up</button>}
+            : <button className="btn" disabled={busy} onClick={signUp}>{busy ? 'Signing up…' : 'Sign me up'}</button>}
         </div>
         {signups?.length > 0 && <><h3 style={{ marginTop: 24 }}>Who's coming</h3><ul style={{ paddingLeft: '1.2em', margin: 0 }}>{signups.map(i => <li key={i.id}><Link to={`/members/${i.id}`}>{i.name}</Link></li>)}</ul></>}
         {isAdmin && <p style={{ marginTop: 18 }}><Link to={`/admin/events/${ev.id}`}>Edit event</Link></p>}

@@ -14,7 +14,7 @@ export default function AdminLayout() {
   }, [])
   const n = k => p[k] ? ` (${p[k]})` : ''
   const cls = ({ isActive }) => isActive ? 'on' : ''
-  return <div className="admin">
+  return <div className="admin-shell">
     <aside>
       <NavLink end className={cls} to="/admin">Overview</NavLink>
       <NavLink className={cls} to="/admin/media">Gallery{n('media')}</NavLink>

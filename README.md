@@ -71,7 +71,7 @@ npm run icons
 
 That writes the three sizes the pages actually load (`logo-104.webp` for the header, `logo-192.webp` for the footer, `logo-768.webp` for the hero), the favicons, the iOS icon, the two PNGs the web manifest needs, and `og-image.png` (1200×630, emblem on club black) for WhatsApp/Facebook/iMessage/X previews. Loading the home page pulls about 130 KB of logo instead of the 1.28 MB master.
 
-The site URL is hard-coded in four places, because crawlers and `public/` files can't read env vars. When a custom domain is attached, update: `index.html` (canonical + `og:url` + `og:image`), `public/robots.txt`, `public/sitemap.xml` and `SITE_URL` in `functions/.env`.
+The public site URL is `https://aztecadelgolfo.com` in `index.html`, `public/robots.txt`, `public/sitemap.xml` and `SITE_URL` in `functions/.env`. The Firebase fallback `https://aztecadelgolfofishingclu-bc814.web.app` still works until DNS is pointed at Hosting.
 
 Crawlers don't run JavaScript, so the Open Graph tags describe the club as a whole. Per-page previews (a specific catch or event) would need prerendering.
 
@@ -99,8 +99,10 @@ Install the `functions` dependencies **before** starting the emulators. If `func
 
 ## Production
 
-Project `aztecadelgolfofishingclu-bc814`, live at **https://aztecadelgolfofishingclu-bc814.web.app**.
+Project `aztecadelgolfofishingclu-bc814`, live at **https://aztecadelgolfo.com** (Firebase fallback: https://aztecadelgolfofishingclu-bc814.web.app).
 Firestore is in `us-central1` (single region, permanent — changing it would mean a new project).
+
+Custom domain: in [Hosting](https://console.firebase.google.com/project/aztecadelgolfofishingclu-bc814/hosting) add `aztecadelgolfo.com` and `www.aztecadelgolfo.com`, then put the TXT + A records Firebase shows into the domain’s DNS (Route 53 / registrar). Also add both hostnames under Authentication → Settings → Authorized domains, or sign-in on the custom domain will fail.
 
 Deployed and working: Firestore rules, the composite indexes, and Hosting.
 

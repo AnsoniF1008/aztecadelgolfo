@@ -5,4 +5,4 @@ Disallow: /profile
 Disallow: /upload
 Disallow: /catches/new
 
-Sitemap: https://aztecadelgolfofishingclu-bc814.web.app/sitemap.xml
+Sitemap: https://aztecadelgolfo.com/sitemap.xml
